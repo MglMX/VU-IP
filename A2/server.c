@@ -3,8 +3,9 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include<unistd.h>
-#include<string.h>
+#include <unistd.h>
+#include <string.h>
+#include "wrapper.h"
 
 int main(){
     int fd, b_err,l_err;
@@ -36,12 +37,29 @@ int main(){
     int client_fd;
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
+    char message[2000];
+    int read_size;
+
     while(1){
         client_fd = accept(fd,(struct sockaddr *)&client_addr,&addrlen); //Accept connections to this socket
         if(client_fd<0){
             perror("Error after accept\n");
         }else{
             printf("Aqui está el tio conectao\n");
+            while( (read_size = recv(client_fd , message , 2000 , 0)) > 0 )
+            {
+                printf("Message: %s\n",message);
+            }
+
+            if(read_size == 0)
+            {
+                puts("Client disconnected");
+                fflush(stdout);
+            }
+            else if(read_size == -1)
+            {
+                perror("recv failed");
+            }
         }
     }
 
