@@ -32,6 +32,66 @@ void printer(char * m, int size){
   }
 }
 
+int attach_get(char * message, char * key, int s_pos, int first){
+  int i_pos = s_pos;
+
+  printf("Key_ %s\n",key);
+
+  if(first){ //Message not initalized
+    strcpy(message,"g"); //Equivalent to 103
+  }else{
+    strcat(&message[s_pos],"g");
+  }
+
+  s_pos += 1;//Next writting position g_
+
+  strcat(&message[s_pos],key); //Concat the key to the message
+
+  s_pos += strlen(key); //Next writting position g<key>_
+
+  message[s_pos]='\0'; //Add \0 to finish command
+
+  printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
+
+  s_pos += 1;//Position where next command should start g<key>\0_
+
+  printf("s_pos: %d\n",s_pos);
+
+  return s_pos;
+}
+
+int attach_put(char * message, char * key, char * value, int s_pos, int first){
+  int i_pos = s_pos;
+
+  printf("Key_ %s\nValue_ %s\n",key,value);
+
+  if(first){ //Message not initalized
+    strcpy(message,"p"); //Equivalent to 103
+  }else{
+    strcat(&message[s_pos],"p");
+  }
+
+  s_pos += 1;
+  strcat(&message[s_pos],key); //Concat the key to the message
+
+  s_pos += strlen(key);
+
+  message[s_pos]='\0'; //Add \0 to finish command
+
+  s_pos+=1; //p<key>\0_
+
+  strcat(&message[s_pos],value);
+  s_pos+=strlen(value); //p<key>\0<value>_
+  message[s_pos]='\0';
+
+  s_pos+= 1;//p<key>\0<value>\0_
+
+  printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
+  printf("s_pos: %d\n",s_pos);
+
+  return s_pos;
+}
+
 int init_socket(char * address, char * port){
   int sfd;
 
@@ -71,6 +131,7 @@ int init_socket(char * address, char * port){
 }
 
 
+
 int main(int argc, char *argv[]){
 
     if(argc < 5){
@@ -84,63 +145,38 @@ int main(int argc, char *argv[]){
 
     char message[2000];
 
+    memset(message,'\0',2000);
     int s_pos = 0; //Position where command should be append
 
     while(argv[arg_check] != NULL){
+
       printf("I am in the while\n");
+
       if(strcmp(argv[arg_check],"get")==0){
           char * key = argv[arg_check+1]; //After get we get the key
 
-          int i_pos = s_pos;
+          int first = 0;
 
-          printf("Key_ %s\n",key);
+          if(arg_check==3)
+            first=1; //First argument
 
-          if(arg_check == 3){ //Message not initalized
-            strcpy(message,"g"); //Equivalent to 103
-          }else{
-            strcat(&message[s_pos],"g");
-          }
-
-          s_pos += 1;//Next writting position g_
-
-          strcat(&message[s_pos],key); //Concat the key to the message
-
-          s_pos += strlen(key); //Next writting position g<key>_
-
-          message[s_pos]='\0'; //Add \0 to finish command
-
-          printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
-
-          s_pos += 1;//Position where next command should start g<key>\0_
+          s_pos = attach_get(message,key,s_pos,first);
 
           arg_check+=2; // Next argument to check from argv
 
-          printf("s_pos: %d\n",s_pos);
       }else if(strcmp(argv[arg_check],"put")==0){
-
-          printf("I am in put\n");
 
           char * key = argv[arg_check+1]; //After put we get the key
           char * value = argv[arg_check+2]; //After key we get the value
 
-          printf("Key_ %s\nValue_ %s\n",key,value);
+          int first = 0;
 
-          if(arg_check == 3){ //Message not initalized
-            strcpy(message,"p"); //Equivalent to 103
-          }else{
-            strcat(&message[s_pos],"p");
-          }
+          if(arg_check==3)
+            first=1; //First argument
 
-          s_pos += 1;
-          strcat(&message[s_pos],key); //Concat the key to the message
+          s_pos = attach_put(message,key,value,s_pos,first);
 
-          s_pos+=strlen(key);
-
-          int size = strlen(key);
-
-          message[s_pos+strlen(key)]='\0'; //Add \0 to finish command
-
-          
+          arg_check+=3; // Next argument to check from argv
 
       }else{
         //Wrong syntax
