@@ -9,6 +9,7 @@
 #include "wrapper.h"
 #include <stdlib.h>
 
+#define BUFFER_SIZE 1000
 /*
 struct sockaddr_in {
     sa_family_t sin_family; // set to AF_INET
@@ -110,19 +111,19 @@ int init_socket(char * address, char * port){
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-       sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-       if (sfd == -1)
-           continue;
+     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+     if (sfd == -1)
+       continue;
 
-       if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
-           break;                  /* Success */
+     if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
+       break;                  /* Success */
 
-       close(sfd);
+     close(sfd);
    }
 
    if (rp == NULL) {               /* No address succeeded */
-       fprintf(stderr, "Could not connect\n");
-       exit(EXIT_FAILURE);
+     fprintf(stderr, "Could not connect\n");
+     exit(EXIT_FAILURE);
    }
 
    freeaddrinfo(result);           /* No longer needed */
@@ -143,9 +144,9 @@ int main(int argc, char *argv[]){
 
     int sfd = init_socket(argv[1],argv[2]);
 
-    char message[2000];
+    char message[BUFFER_SIZE];
 
-    memset(message,'\0',2000);
+    memset(message,'\0',BUFFER_SIZE);
     int s_pos = 0; //Position where command should be append
 
     while(argv[arg_check] != NULL){
@@ -183,6 +184,20 @@ int main(int argc, char *argv[]){
       }
     }
     printer(message,s_pos);
-
     printf("\n");
+
+    writen(sfd,message,BUFFER_SIZE);
+
+    int read_size;
+    char reply[BUFFER_SIZE];
+    memset(reply,'\0',BUFFER_SIZE);
+
+
+    printf("Going to read\n");
+    read_size = readn(sfd,reply,BUFFER_SIZE);
+
+    printf("Message received: %s\n",reply);
+    fflush(stdout);
+    printer(reply,read_size);
+
 }
