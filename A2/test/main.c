@@ -4,39 +4,60 @@
 #include <sys/ipc.h>
 #include <unistd.h>
 #include <string.h>
-
-struct pair{
-  char key[100];
-  char value[100];
-};
+#include "keyvalue.h"
 
 int main(){
-  struct pair *shared_array;
-  int size = sizeof(struct pair)*2;
-  int shmid = shmget(IPC_PRIVATE, size, 0600);
-  shared_array = (struct pair *) shmat(shmid, 0, 0);
-  strcpy(shared_array[0].key,"animal");
-  strcpy(shared_array[0].value,"hedgehog");
-  strcpy(shared_array[1].key,"color");
-  strcpy(shared_array[1].value,"blue");
+  init_array(10);
+
+  put("animal","dog");
+  put("color","blue");
+
 
   if (fork()==0) {
     printf("CHILD\n");
+    print_all();
+    put("animal","cat");
+    put("color","red");
+    put("shape","circle");
+    printf("-----------\n\n");
+    /*
     printf("The key is: %s\n", shared_array[0].key);
     printf("The value is: %s\n", shared_array[0].value);
     printf("The key is: %s\n", shared_array[1].key);
     printf("The value is: %s\n", shared_array[1].value);
     strcpy(shared_array[0].value,"dog");
     strcpy(shared_array[1].value,"green");
-    shmdt((void *) shared_array);
+    */
+    dettach_mem();
   }
-  else {
-    sleep(1);
+  else if (fork()==0) {
+    printf("CHILD2\n");
+    print_all();
+    put("animal","cat");
+    put("color","green");
+    put("pim","pom");
+    printf("-----------\n\n");
+    /*
+    printf("The key is: %s\n", shared_array[0].key);
+    printf("The value is: %s\n", shared_array[0].value);
+    printf("The key is: %s\n", shared_array[1].key);
+    printf("The value is: %s\n", shared_array[1].value);
+    strcpy(shared_array[0].value,"dog");
+    strcpy(shared_array[1].value,"green");
+    */
+    dettach_mem();
+  }else{
+    sleep(3);
+    printf("PARENT\n");
+    print_all();
+    printf("-----------\n\n");
+    /*
     printf("The key is: %s\n", shared_array[0].key);
     printf("The value is: %s\n", shared_array[0].value);
     printf("The key is: %s\n", shared_array[1].key);
     printf("The value is: %s\n", shared_array[1].value);;
-    shmdt((void *) shared_array);
-    shmctl(shmid, IPC_RMID, 0);
+    */
+    dettach_mem();
+    ctl_mem();
   }
 }
