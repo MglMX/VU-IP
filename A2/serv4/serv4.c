@@ -187,12 +187,6 @@ int main(int argc, char *argv[]){
         recv_requests(fd,(struct sockaddr *)&client_addr,&addrlen,i);
     }
 
-    printf("Going to wait for children\n");
+    while(1){}
 
-
-    int status;
-    while (wait(&status) > 0){ };
-
-    dettach_mem();
-    ctl_mem();
 }

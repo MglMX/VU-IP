@@ -36,7 +36,7 @@ void printer(char * m, int size){
 int attach_get(char * message, char * key, int s_pos, int first){
   int i_pos = s_pos;
 
-  printf("Key_ %s\n",key);
+  //printf("Key_ %s\n",key);
 
   if(first){ //Message not initalized
     strcpy(message,"g"); //Equivalent to 103
@@ -52,11 +52,11 @@ int attach_get(char * message, char * key, int s_pos, int first){
 
   message[s_pos]='\0'; //Add \0 to finish command
 
-  printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
+  //printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
 
   s_pos += 1;//Position where next command should start g<key>\0_
 
-  printf("s_pos: %d\n",s_pos);
+  //printf("s_pos: %d\n",s_pos);
 
   return s_pos;
 }
@@ -64,7 +64,7 @@ int attach_get(char * message, char * key, int s_pos, int first){
 int attach_put(char * message, char * key, char * value, int s_pos, int first){
   int i_pos = s_pos;
 
-  printf("Key_ %s\nValue_ %s\n",key,value);
+  //printf("Key_ %s\nValue_ %s\n",key,value);
 
   if(first){ //Message not initalized
     strcpy(message,"p"); //Equivalent to 103
@@ -87,8 +87,8 @@ int attach_put(char * message, char * key, char * value, int s_pos, int first){
 
   s_pos+= 1;//p<key>\0<value>\0_
 
-  printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
-  printf("s_pos: %d\n",s_pos);
+  //printf("Message to be sent: %s(%zu)\n",&message[i_pos],strlen(&message[i_pos]));
+  //printf("s_pos: %d\n",s_pos);
 
   return s_pos;
 }
@@ -131,7 +131,22 @@ int init_socket(char * address, char * port){
    return sfd;
 }
 
-
+void handle_reply(char * reply, int size){
+  int s_pos=0;
+  char value[100];
+  while(s_pos<size){
+    //printf("Inn handle_reply. s_pos_ %d size: %d",s_pos,size);
+    if(reply[s_pos]=='n'){
+      printf("\n");
+      s_pos+=1;
+    }else if(reply[s_pos]=='f'){
+      s_pos+=1; //f_<value>
+      sprintf(value,"%s",&reply[s_pos]);
+      printf("%s\n",value);
+      s_pos+=strlen(value)+1; //f<value>\0
+    }
+  }
+}
 
 int main(int argc, char *argv[]){
 
@@ -148,10 +163,9 @@ int main(int argc, char *argv[]){
 
     memset(message,'\0',BUFFER_SIZE);
     int s_pos = 0; //Position where command should be append
+    int exp_reply = 0; //The client will read from socket if it has value 1
 
     while(argv[arg_check] != NULL){
-
-      printf("I am in the while\n");
 
       if(strcmp(argv[arg_check],"get")==0){
           char * key = argv[arg_check+1]; //After get we get the key
@@ -164,6 +178,7 @@ int main(int argc, char *argv[]){
           s_pos = attach_get(message,key,s_pos,first);
 
           arg_check+=2; // Next argument to check from argv
+          exp_reply=1;
 
       }else if(strcmp(argv[arg_check],"put")==0){
 
@@ -183,21 +198,32 @@ int main(int argc, char *argv[]){
         //Wrong syntax
       }
     }
+
+    /*
+    printf("To send: ");
     printer(message,s_pos);
     printf("\n");
+    */
 
-    writen(sfd,message,BUFFER_SIZE);
+    writen(sfd,message,s_pos);
 
-    int read_size;
-    char reply[BUFFER_SIZE];
-    memset(reply,'\0',BUFFER_SIZE);
+    if(exp_reply){
 
+      int read_size;
+      char reply[BUFFER_SIZE];
+      memset(reply,'\0',BUFFER_SIZE);
 
-    printf("Going to read\n");
-    read_size = readn(sfd,reply,BUFFER_SIZE);
+      read_size = read(sfd,reply,BUFFER_SIZE);
 
-    printf("Message received: %s\n",reply);
-    fflush(stdout);
-    printer(reply,read_size);
+      //printf("Message received: %s(%d)\n",reply,read_size);
+      //fflush(stdout);
 
+      /*
+      printf("Recevied: ");
+      printer(reply,read_size);
+      printf("\n");
+      */
+      handle_reply(reply,read_size);
+    }
+    close(sfd);
 }
