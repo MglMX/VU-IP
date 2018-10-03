@@ -115,13 +115,7 @@ int main(int argc, char *argv[]){
       perror("Missing port number\n");
       exit(1);
     }
-    /*
-    put("color","pink");
-    printf("--Color: %s\n",get("color"));
-    put("city","Granada");
-    printf("--City: %s\n",get("city"));
-    printf("--Color: %s\n",get("color"));
-    */
+    
     int fd;
 
     fd = init_socket(atoi(argv[1])); //Change to argv[1]

@@ -2,7 +2,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
-#include <wait.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,12 +10,10 @@
 #include <sys/sem.h>
 #include <sys/ipc.h>
 #include "keyvalue.h"
+#include <pthread.h>
 
 #define BUFFER_SIZE 1000
 
-int sem_accept;
-struct sembuf upAcc = {0,1,0};
-struct sembuf downAcc = {0,-1,0};
 
 void printer(char * m, int size){
   int i;
@@ -113,61 +110,38 @@ void handle_message(int client_fd,char * message){
     }
   }
 
-  printf("Reply: ");
-  printer(reply,reply_pos);
+
   writen(client_fd,reply,reply_pos);
 
 }
 
-void sig_chld() {
-  while (waitpid(0, NULL, WNOHANG) > 0) {}
-  signal(SIGCHLD,sig_chld);
-}
 
-void treat_request(int client_fd){
+void * treat_request(void *client_fd){
+
+  int *c_fd =(int *)client_fd;
   char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
 
   int read_size;
 
-  read_size = read(client_fd,message,BUFFER_SIZE);
-  printer(message,read_size);
-  handle_message(client_fd,message);
-  print_all();
+  read_size = read(*c_fd,message,BUFFER_SIZE);
+  //printer(message,read_size);
+  handle_message(*c_fd,message);
+  //print_all();
 
+  close(*c_fd);
   //dettach_mem();
 }
 
-void recv_requests(int fd,struct sockaddr * client_addr,socklen_t *addrlen, int child) { /* An iterative server */
-  int newfd;
-  while (1) {
-    //printf("Child %d before semaphore to accept\n",child);
-    semop(sem_accept,&downAcc,1);
-    newfd = accept(fd,client_addr,addrlen);
-    //printf("Child %d Request accepted \n",child);
-    semop(sem_accept,&upAcc,1);
-    treat_request(newfd);
-    close(newfd);
-    //printf("Child %d DONE. newfd closed\n",child);
-    //exit(1);
-  }
-}
 int main(int argc, char *argv[]){
-    if(argc < 3){
-      perror("Missing port number and/or n_process\n");
+    if(argc < 2){
+      perror("Missing port number\n");
       exit(1);
     }
-    /*
-    put("color","pink");
-    printf("--Color: %s\n",get("color"));
-    put("city","Granada");
-    printf("--City: %s\n",get("city"));
-    printf("--Color: %s\n",get("color"));
-    */
+
 
     init_array(100);
 
-    int n_proc = atoi(argv[2]);
     int fd;
     fd = init_socket(atoi(argv[1])); //Change to argv[1]
 
@@ -175,18 +149,15 @@ int main(int argc, char *argv[]){
     socklen_t addrlen = sizeof(struct sockaddr_in);
     struct sockaddr_in client_addr;
 
-    sem_accept = semget(IPC_PRIVATE,1,0600);
-    semop(sem_accept,&upAcc,1);
+    pthread_t t_id;
 
-    int pid;
-    signal(SIGCHLD, sig_chld);
-
-    int i;
-    for(i=0;i<n_proc;i++){
-      if(fork()==0)
-        recv_requests(fd,(struct sockaddr *)&client_addr,&addrlen,i);
+    while(1){
+      client_fd = accept(fd,(struct sockaddr *)&client_addr,&addrlen); //Accept connections to this socket
+        if(client_fd<0){
+            perror("Error after accept\n");
+        }else{
+          pthread_create(&t_id,NULL,treat_request,(void *)&client_fd);
+        }
     }
-
-    while(1){}
 
 }

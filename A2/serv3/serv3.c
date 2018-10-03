@@ -113,8 +113,8 @@ void handle_message(int client_fd,char * message){
     }
   }
 
-  printf("Reply: ");
-  printer(reply,reply_pos);
+  
+  //printer(reply,reply_pos);
   writen(client_fd,reply,reply_pos);
 
 }
@@ -131,9 +131,9 @@ void treat_request(int client_fd){
   int read_size;
 
   read_size = read(client_fd,message,BUFFER_SIZE);
-  printer(message,read_size);
+  //printer(message,read_size);
   handle_message(client_fd,message);
-  print_all();
+  //print_all();
 
   //dettach_mem();
 }
@@ -186,8 +186,6 @@ int main(int argc, char *argv[]){
       if(fork()==0)
         recv_requests(fd,(struct sockaddr *)&client_addr,&addrlen,i);
     }
-
-    printf("Going to wait for children\n");
 
 
     int status;

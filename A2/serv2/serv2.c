@@ -107,8 +107,8 @@ void handle_message(int client_fd,char * message){
     }
   }
 
-  printf("Reply: ");
-  printer(reply,reply_pos);
+  //printf("Reply: ");
+  //printer(reply,reply_pos);
   writen(client_fd,reply,reply_pos);
 
 }
@@ -154,9 +154,9 @@ int main(int argc, char *argv[]){
 
             if(pid == 0){
               read_size = read(client_fd,message,BUFFER_SIZE);
-              printer(message,read_size);
+              //printer(message,read_size);
               handle_message(client_fd,message);
-              print_all();
+              //print_all();
               dettach_mem();
               exit(1);
             }else{

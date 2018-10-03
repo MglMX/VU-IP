@@ -18,7 +18,7 @@ int * size;
 int sem_new_put;
 struct sembuf up = {0,1,0};
 struct sembuf down = {0,-1,0};
-//struct pair dictionary[1000];
+
 
 struct pair *dictionary;
 int shmid;
@@ -34,7 +34,7 @@ void init_array(int length){
   *size = 0;
 
   sem_new_put = semget(IPC_PRIVATE,1,0600);
-  //semop(sem_new_put,&up,1); //Starting the semaphore in 1
+  semop(sem_new_put,&up,1); //Starting the semaphore in 1
 
 }
 
@@ -47,13 +47,9 @@ void print_all(){
 }
 
 char *get(char *key){
-    //printf("In get. key: %s size: %d\n",key,size);
     int i;
     for(i=0;i<*size;i++){
-      //printf("In get. Checking dictionary[%d].key: %s\n",i,dictionary[i].key);
       if(strcmp(dictionary[i].key,key)==0){
-        printf("KEY Found in GET\n");
-        //printf("In get. value: %s\n",dictionary[i].value);
         return dictionary[i].value;
       }
     }
@@ -62,32 +58,28 @@ char *get(char *key){
 }
 
 void put(char *key, char *value){
-  printf("1.Size: %d\n",*size);
   int found = 0;
   int i;
   for(i=0;i<*size && !found;i++){
-      printf("dictionary[%d]=%s\n",i,dictionary[i].key);
-      fflush(stdout);
+      //printf("dictionary[%d]=%s\n",i,dictionary[i].key);
+      //fflush(stdout);
       if(strcmp(dictionary[i].key,key)==0){
-        printf("KEY Found!\n");
-        //semop(dictionary[i].sem,&down,1);
+        semop(dictionary[i].sem,&down,1);
         strcpy(dictionary[i].value,value);
         found = 1;
-        //semop(dictionary[i].sem,&up,1);
+        semop(dictionary[i].sem,&up,1);
       }
   }
 
   if(!found){ //Adding new pair
-    printf("Adding new value\n");
-    //semop(sem_new_put,&down,1); //Locking so there are no problems with size
+    semop(sem_new_put,&down,1); //Locking so there are no problems with size
     strcpy(dictionary[*size].key,key);
     strcpy(dictionary[*size].value,value);
     dictionary[*size].sem = semget(IPC_PRIVATE,1,0600); //Creating lock for the element
-    //semop(dictionary[*size].sem,&up,1); //Make it accesible
+    semop(dictionary[*size].sem,&up,1); //Make it accesible
     *size+=1;
-    //semop(sem_new_put,&up,1); //Unlocking
+    semop(sem_new_put,&up,1); //Unlocking
   }
-  printf("2.Size: %d\n",*size);
 }
 
 void dettach_mem(){
