@@ -11,4 +11,12 @@ char *get(char *key);
 * is discarded and replaced by the new one.
 */
 void put(char *key, char *value);
+
+void print_all();
+
+void init_array(int size);
+
+void dettach_mem();
+void ctl_mem();
+
 #endif

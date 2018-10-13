@@ -47,13 +47,9 @@ void print_all(){
 }
 
 char *get(char *key){
-    //printf("In get. key: %s size: %d\n",key,size);
     int i;
     for(i=0;i<*size;i++){
-      //printf("In get. Checking dictionary[%d].key: %s\n",i,dictionary[i].key);
       if(strcmp(dictionary[i].key,key)==0){
-        printf("KEY Found in GET\n");
-        //printf("In get. value: %s\n",dictionary[i].value);
         return dictionary[i].value;
       }
     }
@@ -62,14 +58,12 @@ char *get(char *key){
 }
 
 void put(char *key, char *value){
-  printf("1.Size: %d\n",*size);
   int found = 0;
   int i;
   for(i=0;i<*size && !found;i++){
-      printf("dictionary[%d]=%s\n",i,dictionary[i].key);
+      //printf("dictionary[%d]=%s\n",i,dictionary[i].key);
       fflush(stdout);
       if(strcmp(dictionary[i].key,key)==0){
-        printf("KEY Found!\n");
         semop(dictionary[i].sem,&down,1);
         strcpy(dictionary[i].value,value);
         found = 1;
@@ -78,7 +72,6 @@ void put(char *key, char *value){
   }
 
   if(!found){ //Adding new pair
-    printf("Adding new value\n");
     semop(sem_new_put,&down,1); //Locking so there are no problems with size
     strcpy(dictionary[*size].key,key);
     strcpy(dictionary[*size].value,value);
@@ -87,7 +80,6 @@ void put(char *key, char *value){
     *size+=1;
     semop(sem_new_put,&up,1); //Unlocking
   }
-  printf("2.Size: %d\n",*size);
 }
 
 void dettach_mem(){
