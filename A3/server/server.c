@@ -84,7 +84,6 @@ int init_server_socket(int port){
 
 int main(int argc, char * argv[]){
 
-
   if (argc<5){
     perror("Not enough arguments. Usage: server <port> <reg_ip> <reg_port> <dir>");
     exit(1);
@@ -100,4 +99,36 @@ int main(int argc, char * argv[]){
 
   handle_r_ok(reg_fd,&n_servers,&my_id);
   printf("There are %d servers and I am server %d \n",n_servers, my_id);
+
+  int start = handle_start(reg_fd);
+
+  if(start){
+    printf("Server %d: Ready to start\n",my_id);
+    int req_id=0;
+    if(my_id==0){
+      req_id=1;
+    }
+    send_query(reg_fd,1);
+    char ip[20];
+    char port[4];
+
+    memset(ip,'\0',10);
+    memset(port,'\0',4);
+
+    int rep = handle_q_ok(reg_fd,ip,port);
+
+    if(rep == 1){
+      printf("Reply to query: IP: %s PORT: %s\n",ip,port);
+    }else if(rep == 0){
+      printf("Reply to query: Q_ERR\n");
+    }else{
+      printf("Reply to query: NOT Q_OK(21) NOT Q_ERR(22)\n");
+    }
+
+
+    while(1){}
+  }else{
+    printf("Server %d: Start not received properly\n",my_id);
+    while(1){}
+  }
 }

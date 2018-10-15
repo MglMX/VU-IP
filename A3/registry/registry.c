@@ -8,26 +8,41 @@
 #include <stdlib.h>
 #include "../messages/messages.h"
 
-#define BUFFER_SIZE 2000 //Check in meesages.c if change
+#define BUFFER_SIZE 100 //Check in meesages.c if change
 
 
 int n_servers;
 struct server_info *servers; //Initialized in registry.c
 
+void print_servers(){
+  int i;
+  for(i=0;i<n_servers;i++){
+    printf("servers[%d]:{\n id: %d\n fd: %d\n ip: %s\n port:%s\n}\n",i,servers[i].id,servers[i].fd,servers[i].ip,servers[i].port);
+  }
+}
 void handle_server(int id){
+    printf("Handling server %d\n",id);
     char message[BUFFER_SIZE];
     int server_fd = servers[id].fd;
 
     int read_size = read(server_fd,message,BUFFER_SIZE);
 
+    printer(message,read_size);
+
     char code = message[0];
+
+    printf("Code received: %d\n",code);
 
     switch (code) {
       case 10: //REGISTER
         handle_register(id,message,read_size,n_servers,servers);
         break;
       case 11: //QUERY
-        
+        printf("Case: 11 QUERY\n");
+        printf("Case: id: %d\n",message[1]);
+        handle_query(server_fd,message,n_servers,servers);
+        break;
+
     }
 }
 
@@ -68,25 +83,20 @@ void receive_servers(int n_servers, int reg_fd){
   int pid;
   int i;
   for(i=0;i<n_servers;i++){
+    printf("Waiting for accept\n");
     int server_fd = accept(reg_fd,(struct sockaddr *)&server_addr,&addrlen);
     printf("Server connected. IP: %s PORT: %d \n ID: %d fd: %d\n",inet_ntoa(server_addr.sin_addr),server_addr.sin_port,i,server_fd);
     servers[i].id = i;
     servers[i].fd = server_fd;
-    servers[i].ip = inet_ntoa(server_addr.sin_addr);
+    strcpy(servers[i].ip,inet_ntoa(server_addr.sin_addr));
     //servers[i].port //Initialized in handle_server
     if(server_fd<0){
       perror("Error accepting connection\n");
       exit(1);
-    }else{
-      pid=fork();
-      if(pid == 0){
-        handle_server(i);
-        close(server_fd);
-      }else{
-        close(server_fd);
-      }
     }
+    handle_server(i);
   }
+  printf("Done receiving servers\n");
 }
 
 int main(int argc, char * argv[]){
@@ -102,9 +112,30 @@ int main(int argc, char * argv[]){
 
   receive_servers(n_servers,reg_fd);
 
+  printf("------------------------\n");
+  char ip[20];
+  //print_servers();
+  printf("Servers[%d].ip = %s(%zu)\n",0,servers[0].ip,strlen(servers[0].ip));
+  strcpy(ip,servers[0].ip);
+  printf("copied ip: %s\n",ip);
+  printf("------------------------\n");
 
+  printf("All servers connected\n");
+  send_start(n_servers,servers);
   //Do something after all servers are connected
+  printf("Sent start to all servers\n\n");
 
-  close(reg_fd);
+  int i,pid;
+  for(i=0;i<n_servers;i++){
+    pid = fork();
+    if(pid == 0){
+      printf("I am child %d\n",i);
+      //print_servers();
+      handle_server(i);
+      sleep(5);
+    }
+  }
+  while(1){}
+  //close(reg_fd);
   return 0;
 }
