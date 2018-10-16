@@ -12,6 +12,8 @@ void clear_string(char * string);
 
 void print_servers_2(struct server_info *servers, int n_servers);
 
+void printer_index(char * m, int size);
+
 void printer(char * m, int size);
 /*
 * Wrapper function from

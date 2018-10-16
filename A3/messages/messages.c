@@ -51,6 +51,23 @@ ssize_t writen(int fd, const void *vptr, size_t n)
   return n;
 }
 
+void printer_index(char * m, int size){
+  int i;
+
+  for(i=0;i<size;i++){
+    if(i == 0){
+      printf("0. %d\n",m[i]);
+    }else{
+      if(m[i]=='\0')
+        printf("%d \\0\n",i);
+      else
+        printf("%d %c\n",i,m[i]);
+    }
+
+  }
+  printf(" (%d) \n",size);
+}
+
 void printer(char * m, int size){
   int i;
 
@@ -74,23 +91,24 @@ void printer(char * m, int size){
 
 int handle_q_ok(int reg_fd, char * ip, char * port){
   printf("I am in handle_q_ok\n");
+
   char message[50];
-  memset(message,'\0',strlen(message));
+  memset(message,'\0',50);
+
   int size_read = read(reg_fd,message,50);
+
   printer(message,size_read);
-  
+
   if(message[0]==21){
     printf("Handle_q_ok: Code is 21\n");
+
     int pos=1;
-    strcpy(ip,&message[pos]);
-    printf("Handle_q_ok: IP: %s \n",ip);
-    fflush(stdout);
+    sprintf(ip,"%s",&message[pos]);
     pos+=strlen(ip)+1;
-    printf("Handle_q_ok: 1.PORT: %s \n",&message[11]);
-    strcpy(port,&message[11]);
-    printf("Handle_q_ok: 2.PORT: %s \n",port);
-    fflush(stdout);
-    printf("Handle_q_ok: IP: %s PORT: %s \n",ip,port);
+    sprintf(port,"%s",&message[pos]);
+
+    printf("Handle_q_ok: IP: %s PORT: %s\n",ip,port);
+
     return 1;
   }else if(message[0]==22){
     return 0;
@@ -231,6 +249,9 @@ void handle_query(int server_fd, char * message, int n_servers, struct server_in
     printf("Entro en el else\n");
     char ip[20];
     char port[4];
+
+    memset(ip,'\0',20);
+    memset(port,'\0',4);
 
     printf("Servers[%d].ip = %s(%zu)\n",id,servers[id].ip,strlen(servers[id].ip));
     strcpy(ip,servers[id].ip);

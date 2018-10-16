@@ -108,12 +108,13 @@ int main(int argc, char * argv[]){
     if(my_id==0){
       req_id=1;
     }
-    send_query(reg_fd,1);
-    char ip[20];
-    char port[4];
+    send_query(reg_fd,req_id);
 
-    memset(ip,'\0',10);
-    memset(port,'\0',4);
+    char ip[20];
+    char port[5];
+
+    memset(ip,'\0',20);
+    memset(port,'\0',5);
 
     int rep = handle_q_ok(reg_fd,ip,port);
 
@@ -124,7 +125,6 @@ int main(int argc, char * argv[]){
     }else{
       printf("Reply to query: NOT Q_OK(21) NOT Q_ERR(22)\n");
     }
-
 
     while(1){}
   }else{
