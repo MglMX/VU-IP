@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "../messages/messages.h"
 
-#define BUFFER_SIZE 100 //Check in meesages.c if change
+#define BUFFER_SIZE 2000 //Check in meesages.c if change
 
 
 int n_servers;

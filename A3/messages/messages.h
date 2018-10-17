@@ -8,6 +8,10 @@ struct server_info{
   char port[5];
 };
 
+unsigned long djb2_hash( unsigned char * str);
+
+int get_file_size(FILE * file);
+
 void clear_string(char * string);
 
 void print_servers_2(struct server_info *servers, int n_servers);

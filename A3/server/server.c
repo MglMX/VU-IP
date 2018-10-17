@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netdb.h>
+#include <sys/sendfile.h>
 #include "../messages/messages.h"
 
 #define BUFFER_SIZE 2000
@@ -82,6 +83,69 @@ int init_server_socket(int port){
   return fd;
 }
 
+void handle_client(int client_fd){
+
+  printf("\nhandle_client.\n");
+
+  unsigned char message[BUFFER_SIZE];
+  memset(message,'\0',BUFFER_SIZE);
+
+  FILE *file_stream;
+
+  file_stream = fopen("test.zip","wb");
+
+  int read_size;
+
+  unsigned long hash;
+
+  do{
+
+    //read_size = sendfile(fileno(file_stream),client_fd,NULL,BUFFER_SIZE);
+
+    read_size = read(client_fd,message,BUFFER_SIZE);
+
+    printf("Message[0]=%d\n",message[0]);
+
+    printf("Message[1]=%s\n",&message[1]);
+
+    printf("Message read: %s\n",message);
+
+    fwrite(message,sizeof(unsigned char),read_size,file_stream);
+
+    printf("Hash: %lu\n",djb2_hash(message));
+    printf("Read from socket %d\n", read_size);
+
+  }while(read_size > 0);
+
+  printf("File written\n");
+
+  fclose(file_stream);
+
+  file_stream = fopen("test.zip","rb");
+
+  read_size = get_file_size(file_stream);
+
+  printf("Size get_file_size: %d\n",read_size);
+
+  unsigned char file[BUFFER_SIZE];
+
+  if(file_stream != NULL){
+    printf("File opened \n");
+    read_size = fread(file,sizeof(unsigned char),read_size,file_stream);
+    printf("Bytes read from test.zip: %d\n",read_size);
+    fflush(stdout);
+
+    hash = djb2_hash(file);
+    printf("Hash: %lu \n",hash);
+  }else{
+    perror("Error opening test.zip\n");
+  }
+
+  fclose(file_stream);
+
+  //printer(message,read_size);
+}
+
 int main(int argc, char * argv[]){
 
   if (argc<5){
@@ -104,29 +168,27 @@ int main(int argc, char * argv[]){
 
   if(start){
     printf("Server %d: Ready to start\n",my_id);
-    int req_id=0;
-    if(my_id==0){
-      req_id=1;
+
+    int client_fd;
+    socklen_t addrlen = sizeof(struct sockaddr_in);
+    struct sockaddr_in client_addr;
+    int pid;
+
+    while(1){
+      client_fd = accept(server_fd,(struct sockaddr *)&client_addr,&addrlen);
+      if(client_fd<0){
+        perror("Error after accept\n");
+      }else{
+        pid = fork();
+
+        if(pid == 0){
+          handle_client(client_fd);
+          exit(1);
+        }else{
+          close(client_fd);
+        }
+      }
     }
-    send_query(reg_fd,req_id);
-
-    char ip[20];
-    char port[5];
-
-    memset(ip,'\0',20);
-    memset(port,'\0',5);
-
-    int rep = handle_q_ok(reg_fd,ip,port);
-
-    if(rep == 1){
-      printf("Reply to query: IP: %s PORT: %s\n",ip,port);
-    }else if(rep == 0){
-      printf("Reply to query: Q_ERR\n");
-    }else{
-      printf("Reply to query: NOT Q_OK(21) NOT Q_ERR(22)\n");
-    }
-
-    while(1){}
   }else{
     printf("Server %d: Start not received properly\n",my_id);
     while(1){}

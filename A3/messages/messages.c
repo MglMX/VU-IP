@@ -11,6 +11,25 @@
 
 #define BUFFER_SIZE 2000
 
+unsigned long djb2_hash( unsigned char * str)
+{
+  unsigned long hash = 5381;
+  int c;
+  while (c = *str++)
+    hash = ( ( hash << 5) + hash) + c ; /* hash ∗ 33 + c */
+  return hash;
+}
+
+int get_file_size(FILE * file){
+  fseek(file,0L,SEEK_END); //Seeking end of file
+
+  int file_size = ftell(file); //Getting bytes
+
+  fseek(file,0L,SEEK_SET); //Seeking back to begging
+
+  return file_size;
+}
+
 void clear_string(char * string){
   memset(string,'\0',strlen(string));
 }
