@@ -20,12 +20,34 @@ unsigned long djb2_hash( unsigned char * str)
   return hash;
 }
 
-int get_file_size(FILE * file){
+unsigned long get_file_hash(char * filename){
+  FILE * file_fd = fopen(filename,"rb");
+
+  unsigned char file[BUFFER_SIZE];
+
+  int read_size;
+  do{
+    read_size = fread(file,sizeof(char),BUFFER_SIZE,file_fd);
+
+  }while(read_size>0);
+
+  fclose(file_fd);
+
+  return djb2_hash(file);
+
+}
+
+int get_file_size(char * filename){
+
+  FILE * file = fopen(filename,"rb");
+
   fseek(file,0L,SEEK_END); //Seeking end of file
 
   int file_size = ftell(file); //Getting bytes
 
   fseek(file,0L,SEEK_SET); //Seeking back to begging
+
+  fclose(file);
 
   return file_size;
 }
@@ -193,6 +215,11 @@ int handle_start(int reg_fd){
   }
 }
 
+void handle_put(int client_fd){
+  printf("\nhandle_put.\n");
+  
+}
+
 /////////////////////////////////////////////////////////////
 // REGISTRY
 /////////////////////////////////////////////////////////////
@@ -314,5 +341,48 @@ void handle_register(int id,char * message, int size,int n_servers,struct server
   printf("Server_fd: %d\n", servers[id].fd);
   send_r_ok(servers[id].fd,id,n_servers);
 
+}
 
+
+
+/////////////////////////////////////////////////////////////
+// CLIENT
+/////////////////////////////////////////////////////////////
+
+int send_put(char * filename, int server_fd){
+  FILE * file_fd;
+
+  file_fd = fopen(filename,"rb");
+
+  unsigned char file[BUFFER_SIZE];
+
+  int read_size;
+
+  int pos=0;
+
+  file[pos]=12; //Attaching PUT code
+
+  pos+=1;
+
+  strcat(&file[pos],filename); //Attaching filename
+
+  pos+=strlen(filename);
+
+  file[pos]='\0';
+
+  pos+=1;
+
+  do{
+    read_size = fread(&file[pos],sizeof(char),BUFFER_SIZE,file_fd);
+    printf("fread read_size: %d\n",read_size);
+
+    writen(server_fd,file,read_size);
+
+  }while(read_size>0);
+
+  unsigned long hash = djb2_hash(&file[pos]);
+
+  printf("Hash: %lu \n",hash);
+
+  fclose(file_fd);
 }

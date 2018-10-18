@@ -10,7 +10,9 @@ struct server_info{
 
 unsigned long djb2_hash( unsigned char * str);
 
-int get_file_size(FILE * file);
+int get_file_size(char * filename);
+
+unsigned long get_file_hash(char * filename);
 
 void clear_string(char * string);
 
@@ -55,5 +57,13 @@ void send_q_err(int server_fd);
 void handle_query(int server_fd, char * message, int n_servers, struct server_info * servers);
 
 void handle_register(int id,char * message,int size,int n_servers,struct server_info* servers);
+
+/////////////////////////////////////////////////////////////
+// CLIENT
+/////////////////////////////////////////////////////////////
+
+int send_put(char * filename, int server_fd);
+
+
 
 #endif

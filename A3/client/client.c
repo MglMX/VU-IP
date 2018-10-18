@@ -57,57 +57,22 @@ int main(int argc, char * argv[]){
 
   int server_fd = init_client_socket("127.0.0.1","6666");
 
-  FILE * file_fd;
-
-  file_fd = fopen(argv[2],"rb");
-
   char filename[50];
   memset(filename,'\0',50);
-
   strcpy(filename,argv[2]);
 
   printf("Name of the file: %s\n",filename);
 
-  unsigned char file[BUFFER_SIZE];
-
-  int read_size;
-
-
-  int pos=0;
-
-  file[pos]=12;
-
-  pos+=1;
-
-  strcat(&file[pos],filename);
-
-  pos+=strlen(filename);
-
-  file[pos]='\0';
-
-  pos+=1;
-
-
-  do{
-    read_size = fread(&file[pos],sizeof(char),BUFFER_SIZE,file_fd);
-    printf("fread read_size: %d\n",read_size);
-
-    writen(server_fd,file,read_size);
-
-  }while(read_size>0);
-
-  fclose(file_fd);
+  send_put(filename,server_fd);
 
   close(server_fd);
 
 
-  unsigned long hash = djb2_hash(file);
-
-  printf("Hash: %lu \n",hash);
-
-  int file_size = get_file_size(file_fd);
+  int file_size = get_file_size(filename);
 
   printf("File size: %d \n",file_size);
+
+  printf("File hash: %lu\n",get_file_hash(filename));
 
 
 

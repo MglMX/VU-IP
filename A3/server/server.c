@@ -90,11 +90,17 @@ void handle_client(int client_fd){
   unsigned char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
 
+
   FILE *file_stream;
 
   file_stream = fopen("test.zip","wb");
 
   int read_size;
+
+  char code;
+  read_size = read(client_fd,&code,1);
+
+  printf("Code is: %d\n",code);
 
   unsigned long hash;
 
@@ -104,11 +110,7 @@ void handle_client(int client_fd){
 
     read_size = read(client_fd,message,BUFFER_SIZE);
 
-    printf("Message[0]=%d\n",message[0]);
-
-    printf("Message[1]=%s\n",&message[1]);
-
-    printf("Message read: %s\n",message);
+    printf("Message=%s\n",message);
 
     fwrite(message,sizeof(unsigned char),read_size,file_stream);
 
@@ -123,7 +125,7 @@ void handle_client(int client_fd){
 
   file_stream = fopen("test.zip","rb");
 
-  read_size = get_file_size(file_stream);
+  read_size = get_file_size("test.zip");
 
   printf("Size get_file_size: %d\n",read_size);
 

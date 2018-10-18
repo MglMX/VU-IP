@@ -115,7 +115,7 @@ int main(int argc, char *argv[]){
       perror("Missing port number\n");
       exit(1);
     }
-    
+
     int fd;
 
     fd = init_socket(atoi(argv[1])); //Change to argv[1]
