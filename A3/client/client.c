@@ -62,9 +62,30 @@ int main(int argc, char * argv[]){
   strcpy(filename,argv[2]);
 
   printf("Name of the file: %s\n",filename);
+  printf("Filname hash: %lu\n",djb2_hash(filename));
 
   send_put(filename,server_fd);
 
+  /*
+  char hash_filename[50];
+  char hash_file[50];
+
+  memset(hash_filename,'\0',50);
+  memset(hash_file,'\0',50);
+
+  int res = handle_g_ok(server_fd,hash_filename,hash_file);
+
+  if(res == 1){
+    printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+
+  }else if(res == 0){
+    printf("File not found\n");
+  }else{
+    printf("Received something differet\n");
+  }
+
+  */
+  //sleep(5);
   close(server_fd);
 
 
@@ -73,8 +94,5 @@ int main(int argc, char * argv[]){
   printf("File size: %d \n",file_size);
 
   printf("File hash: %lu\n",get_file_hash(filename));
-
-
-
 
 }

@@ -87,34 +87,48 @@ void handle_client(int client_fd){
 
   printf("\nhandle_client.\n");
 
-  unsigned char message[BUFFER_SIZE];
-  memset(message,'\0',BUFFER_SIZE);
-
-
-  FILE *file_stream;
-
-  file_stream = fopen("test.zip","wb");
-
-  int read_size;
-
   char code;
-  read_size = read(client_fd,&code,1);
+  int read_size = read(client_fd,&code,1);
 
   printf("Code is: %d\n",code);
 
+  switch (code) {
+    case 12: //PUT
+      handle_put(client_fd);
+      break;
+
+  }
+
+  /*
+  unsigned char message[BUFFER_SIZE];
+  memset(message,'\0',BUFFER_SIZE);
+
+  FILE *file_stream;
+
+  int read_size;
+
   unsigned long hash;
 
+  int read_name = 0;
+
+  char filename[50];
+  int pos=0;
   do{
+    if(!read_name){
+      read_size = read(client_fd,message,BUFFER_SIZE);
+      sprintf(filename,"%s",message);
+      printf("Filename: %s(%zu)\n",filename,strlen(filename));
 
-    //read_size = sendfile(fileno(file_stream),client_fd,NULL,BUFFER_SIZE);
+      file_stream = fopen(filename,"wb");
 
-    read_size = read(client_fd,message,BUFFER_SIZE);
+      pos=strlen(filename)+1;
+      fwrite(&message[pos],sizeof(unsigned char),read_size-pos,file_stream); //Write read bytes minus the bytes of the filename
+      read_name=1;
+    }else{
+      read_size = read(client_fd,message,BUFFER_SIZE);
+      fwrite(message,sizeof(unsigned char),read_size,file_stream);
+    }
 
-    printf("Message=%s\n",message);
-
-    fwrite(message,sizeof(unsigned char),read_size,file_stream);
-
-    printf("Hash: %lu\n",djb2_hash(message));
     printf("Read from socket %d\n", read_size);
 
   }while(read_size > 0);
@@ -123,29 +137,13 @@ void handle_client(int client_fd){
 
   fclose(file_stream);
 
-  file_stream = fopen("test.zip","rb");
+  printf("Hash: %lu\n",get_file_hash(filename));
 
-  read_size = get_file_size("test.zip");
-
-  printf("Size get_file_size: %d\n",read_size);
-
-  unsigned char file[BUFFER_SIZE];
-
-  if(file_stream != NULL){
-    printf("File opened \n");
-    read_size = fread(file,sizeof(unsigned char),read_size,file_stream);
-    printf("Bytes read from test.zip: %d\n",read_size);
-    fflush(stdout);
-
-    hash = djb2_hash(file);
-    printf("Hash: %lu \n",hash);
-  }else{
-    perror("Error opening test.zip\n");
-  }
-
-  fclose(file_stream);
+  printf("Length: %d\n",get_file_size(filename));
 
   //printer(message,read_size);
+
+  */
 }
 
 int main(int argc, char * argv[]){

@@ -130,6 +130,7 @@ void printer(char * m, int size){
 // SERVER
 /////////////////////////////////////////////////////////////
 
+
 int handle_q_ok(int reg_fd, char * ip, char * port){
   printf("I am in handle_q_ok\n");
 
@@ -217,7 +218,90 @@ int handle_start(int reg_fd){
 
 void handle_put(int client_fd){
   printf("\nhandle_put.\n");
-  
+
+  unsigned char message[BUFFER_SIZE];
+  memset(message,'\0',BUFFER_SIZE);
+
+  FILE *file_stream;
+
+  int read_size;
+
+  unsigned long hash;
+
+  int read_name = 0;
+
+  char filename[50];
+
+  int pos=0;
+
+  do{
+    if(!read_name){
+      read_size = read(client_fd,message,BUFFER_SIZE);
+      sprintf(filename,"%s",message);
+      printf("Filename: %s(%zu)\n",filename,strlen(filename));
+
+      file_stream = fopen(filename,"wb");
+
+      pos=strlen(filename)+1;
+      fwrite(&message[pos],sizeof(unsigned char),read_size-pos,file_stream); //Write read bytes minus the bytes of the filename
+      read_name=1;
+    }else{
+      read_size = read(client_fd,message,BUFFER_SIZE);
+      fwrite(message,sizeof(unsigned char),read_size,file_stream);
+    }
+
+    printf("Read from socket %d\n", read_size);
+
+  }while(read_size > 0);
+
+  printf("File written\n");
+
+  fclose(file_stream);
+
+  char hash_filename[50];
+  char hash_file[50];
+
+  memset(hash_filename,'\0',50);
+  memset(hash_file,'\0',50);
+
+  sprintf(hash_filename, "%lu",djb2_hash(filename));
+  sprintf(hash_file, "%lu",get_file_hash(filename));
+
+  printf("Hash filename: %s\n",hash_filename);
+
+  printf("Hash: %s\n",hash_file);
+
+  printf("Length: %d\n",get_file_size(filename));
+  fflush(stdout);
+  //send_g_ok(client_fd,hash_filename,hash_file);
+
+
+}
+
+void send_g_ok(int client_fd, char * hash_filename, char * hash_file){
+  char message[BUFFER_SIZE];
+  memset(message,'\0',BUFFER_SIZE);
+
+  int pos=0;
+  message[pos]=23; //PUT Code
+
+  pos+=1;
+  strcat(&message[pos],hash_filename);
+
+  pos+=strlen(hash_filename);
+  message[pos]='\0';
+
+  pos+=1;
+  strcat(&message[pos],hash_file);
+
+  pos+=strlen(hash_file);
+  message[pos]='\0';
+
+  //pos+=1;
+
+  printf("Send_g_ok. Going to write\n");
+  writen(client_fd,message,pos);
+  printf("Send_g_ok. Written\n");
 }
 
 /////////////////////////////////////////////////////////////
@@ -348,6 +432,40 @@ void handle_register(int id,char * message, int size,int n_servers,struct server
 /////////////////////////////////////////////////////////////
 // CLIENT
 /////////////////////////////////////////////////////////////
+
+int handle_g_ok(int server_fd, char * hash_filename, char * hash_file){
+  printf("In handle_g_ok\n");
+
+  char message[BUFFER_SIZE];
+  memset(message,'\0',BUFFER_SIZE);
+
+  int size_read;
+
+  do{
+    size_read = read(server_fd,message,BUFFER_SIZE);
+    printf("Size read: %d\n",size_read);
+  }while(size_read>0);
+
+  int pos=0;
+
+  if(message[pos] == 23){
+    pos+=1;
+    strcpy(hash_filename,&message[pos]);
+
+    pos+=strlen(hash_filename)+1;
+    strcpy(hash_file,&message[pos]);
+
+    printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+
+    return 1;
+  }else if(message[pos] == 24){
+    return 0;
+  }else{
+    perror("Expecting handle_g_ok but something else found\n");
+    return -1;
+  }
+
+}
 
 int send_put(char * filename, int server_fd){
   FILE * file_fd;

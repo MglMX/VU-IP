@@ -44,6 +44,10 @@ int send_register(int reg_fd, char * port);
 
 int handle_start(int reg_fd);
 
+void handle_put(int client_fd);
+
+void send_g_ok(int client_fd, char * hash_filename, char * hash_file);
+
 /////////////////////////////////////////////////////////////
 // REGISTRY
 /////////////////////////////////////////////////////////////
@@ -61,6 +65,8 @@ void handle_register(int id,char * message,int size,int n_servers,struct server_
 /////////////////////////////////////////////////////////////
 // CLIENT
 /////////////////////////////////////////////////////////////
+
+int handle_g_ok(int server_fd, char * hash_filename, char * hash_file);
 
 int send_put(char * filename, int server_fd);
 
