@@ -57,38 +57,49 @@ int main(int argc, char * argv[]){
 
   int server_fd = init_client_socket("127.0.0.1","6666");
 
+  char command[7];
+
+  strcpy(command,argv[1]);
+
   char filename[50];
   memset(filename,'\0',50);
   strcpy(filename,argv[2]);
 
   printf("Name of the file: %s\n",filename);
-  printf("Filname hash: %lu\n",djb2_hash(filename));
+  printf("Filename hash: %lu\n",djb2_hash(filename));
 
-  send_put(server_fd,filename);
+  if(strcmp(command,"put") == 0){
+    printf("\nPUT\n");
+    send_put(server_fd,filename); //Send the file
 
-  shutdown(server_fd,SHUT_WR);
+    shutdown(server_fd,SHUT_WR); //Make the socket stop reading on the other side
 
-  char hash_filename[50];
-  char hash_file[50];
+    char hash_filename[50];
+    char hash_file[50];
 
-  memset(hash_filename,'\0',50);
-  memset(hash_file,'\0',50);
+    memset(hash_filename,'\0',50);
+    memset(hash_file,'\0',50);
 
-  int res = handle_g_ok(server_fd,hash_filename,hash_file);
+    int res = handle_g_ok(server_fd,hash_filename,hash_file); //Wait for the hash of the filename and file
 
-  if(res == 1){
-    printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+    if(res == 1){
+      printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
 
-  }else if(res == 0){
-    printf("File not found\n");
+    }else if(res == 0){
+      printf("File not found\n");
+    }else{
+      printf("Wrong code received after put.\n");
+    }
+  }else if(strcmp(command,"get") == 0){
+
+  }else if(strcmp(command,"delete") == 0){
+
   }else{
-    printf("Received something differet\n");
+    perror("Wrong command. Options are: put, get or delete. \n");
   }
-
 
   //sleep(5);
   close(server_fd);
-
 
   int file_size = get_file_size(filename);
 

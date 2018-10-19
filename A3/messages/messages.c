@@ -455,7 +455,7 @@ int handle_g_ok(int server_fd, char * hash_filename, char * hash_file){
     pos+=strlen(hash_filename)+1;
     strcpy(hash_file,&message[pos]);
 
-    printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+    //printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
 
     return 1;
   }else if(message[pos] == 24){
