@@ -94,56 +94,14 @@ void handle_client(int client_fd){
 
   switch (code) {
     case 12: //PUT
-      handle_put(client_fd);
+      handle_put(client_fd,n_servers,my_id);
       break;
-
+    case 13: //GET
+      handle_get(client_fd,n_servers,my_id);
+      break;
   }
 
-  /*
-  unsigned char message[BUFFER_SIZE];
-  memset(message,'\0',BUFFER_SIZE);
 
-  FILE *file_stream;
-
-  int read_size;
-
-  unsigned long hash;
-
-  int read_name = 0;
-
-  char filename[50];
-  int pos=0;
-  do{
-    if(!read_name){
-      read_size = read(client_fd,message,BUFFER_SIZE);
-      sprintf(filename,"%s",message);
-      printf("Filename: %s(%zu)\n",filename,strlen(filename));
-
-      file_stream = fopen(filename,"wb");
-
-      pos=strlen(filename)+1;
-      fwrite(&message[pos],sizeof(unsigned char),read_size-pos,file_stream); //Write read bytes minus the bytes of the filename
-      read_name=1;
-    }else{
-      read_size = read(client_fd,message,BUFFER_SIZE);
-      fwrite(message,sizeof(unsigned char),read_size,file_stream);
-    }
-
-    printf("Read from socket %d\n", read_size);
-
-  }while(read_size > 0);
-
-  printf("File written\n");
-
-  fclose(file_stream);
-
-  printf("Hash: %lu\n",get_file_hash(filename));
-
-  printf("Length: %d\n",get_file_size(filename));
-
-  //printer(message,read_size);
-
-  */
 }
 
 int main(int argc, char * argv[]){

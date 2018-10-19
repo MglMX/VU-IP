@@ -44,9 +44,11 @@ int send_register(int reg_fd, char * port);
 
 int handle_start(int reg_fd);
 
-void handle_put(int client_fd);
+void handle_put(int client_fd, int n_servers, int my_id);
 
-void send_g_ok(int client_fd, char * hash_filename, char * hash_file);
+void send_p_ok(int client_fd, char * hash_filename, char * hash_file);
+
+void handle_get(int client_fd, int n_servers, int my_id);
 
 /////////////////////////////////////////////////////////////
 // REGISTRY
@@ -62,11 +64,15 @@ void handle_query(int server_fd, char * message, int n_servers, struct server_in
 
 void handle_register(int id,char * message,int size,int n_servers,struct server_info* servers);
 
+void send_g_ok(int client_fd, char * filename);
 /////////////////////////////////////////////////////////////
 // CLIENT
 /////////////////////////////////////////////////////////////
+int handle_g_ok(int server_fd,char * filename,char * hash_filename, char * hash_file);
 
-int handle_g_ok(int server_fd, char * hash_filename, char * hash_file);
+void send_get(int server_fd, char * filename);
+
+int handle_p_ok(int server_fd, char * hash_filename, char * hash_file);
 
 int send_put(int server_fd,char * filename);
 

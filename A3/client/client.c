@@ -80,7 +80,7 @@ int main(int argc, char * argv[]){
     memset(hash_filename,'\0',50);
     memset(hash_file,'\0',50);
 
-    int res = handle_g_ok(server_fd,hash_filename,hash_file); //Wait for the hash of the filename and file
+    int res = handle_p_ok(server_fd,hash_filename,hash_file); //Wait for the hash of the filename and file
 
     if(res == 1){
       printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
@@ -91,6 +91,29 @@ int main(int argc, char * argv[]){
       printf("Wrong code received after put.\n");
     }
   }else if(strcmp(command,"get") == 0){
+      send_get(server_fd,filename);
+
+      shutdown(server_fd,SHUT_WR); //Make the socket stop reading on the other side
+
+      char hash_filename[50];
+      char hash_file[50];
+
+      memset(hash_filename,'\0',50);
+      memset(hash_file,'\0',50);
+
+      int res = handle_g_ok(server_fd,filename,hash_filename,hash_file);
+
+      if(res == 1){
+        printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+
+      }else if(res == 0){
+        printf("File not found\n");
+
+        close(server_fd);
+        exit(1);
+      }else{
+        printf("Wrong code received after put.\n");
+      }
 
   }else if(strcmp(command,"delete") == 0){
 
