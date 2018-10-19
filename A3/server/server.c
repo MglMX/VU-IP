@@ -83,7 +83,7 @@ int init_server_socket(int port){
   return fd;
 }
 
-void handle_client(int client_fd){
+void handle_client(int client_fd,int reg_fd){
 
   printf("\nhandle_client.\n");
 
@@ -94,10 +94,10 @@ void handle_client(int client_fd){
 
   switch (code) {
     case 12: //PUT
-      handle_put(client_fd,n_servers,my_id);
+      handle_put(client_fd,reg_fd,n_servers,my_id);
       break;
     case 13: //GET
-      handle_get(client_fd,n_servers,my_id);
+      handle_get(client_fd,reg_fd,n_servers,my_id);
       break;
   }
 
@@ -140,7 +140,7 @@ int main(int argc, char * argv[]){
         pid = fork();
 
         if(pid == 0){
-          handle_client(client_fd);
+          handle_client(client_fd,reg_fd);
           exit(1);
         }else{
           close(client_fd);

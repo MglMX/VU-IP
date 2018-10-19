@@ -216,7 +216,7 @@ int handle_start(int reg_fd){
   }
 }
 
-void handle_put(int client_fd, int n_servers, int my_id){
+void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
   printf("\nhandle_put.\n");
 
   unsigned char message[BUFFER_SIZE];
@@ -272,10 +272,24 @@ void handle_put(int client_fd, int n_servers, int my_id){
   printf("Hash: %s\n",hash_file);
 
   printf("Length: %d\n",get_file_size(filename));
-  fflush(stdout);
-  send_p_ok(client_fd,hash_filename,hash_file);
 
+  int target_server = djb2_hash(filename)%n_servers;
 
+  printf("File should be in server %d\n",target_server);
+
+  if(target_server == my_id){
+    printf("I am the server who should have this file(%d)\n",my_id);
+    send_p_ok(client_fd,hash_filename,hash_file);
+  }else{
+    char ip[30];
+    char port[5];
+
+    memset(ip,'\0',30);
+    memset(port,'\0',5);
+
+    //TODO: Send query to registry. receive IP and PORT, Make new connection to server. and do send_put. Retrieve hash filene nad has file and froward it back to client_fd 
+    //send_query();
+  }
 }
 
 void send_p_ok(int client_fd, char * hash_filename, char * hash_file){
@@ -304,7 +318,7 @@ void send_p_ok(int client_fd, char * hash_filename, char * hash_file){
   printf("Send_p_ok. Written\n");
 }
 
-void handle_get(int client_fd, int n_servers, int my_id){
+void handle_get(int client_fd, int reg_fd, int n_servers, int my_id){
   printf("\nhandle_get.Server %d\n",my_id);
 
   unsigned char message[BUFFER_SIZE];

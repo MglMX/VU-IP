@@ -44,11 +44,11 @@ int send_register(int reg_fd, char * port);
 
 int handle_start(int reg_fd);
 
-void handle_put(int client_fd, int n_servers, int my_id);
+void handle_put(int client_fd,int reg_fd, int n_servers, int my_id);
 
 void send_p_ok(int client_fd, char * hash_filename, char * hash_file);
 
-void handle_get(int client_fd, int n_servers, int my_id);
+void handle_get(int client_fd, int reg_fd, int n_servers, int my_id);
 
 /////////////////////////////////////////////////////////////
 // REGISTRY
