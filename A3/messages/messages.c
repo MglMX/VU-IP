@@ -273,7 +273,7 @@ void handle_put(int client_fd){
 
   printf("Length: %d\n",get_file_size(filename));
   fflush(stdout);
-  //send_g_ok(client_fd,hash_filename,hash_file);
+  send_g_ok(client_fd,hash_filename,hash_file);
 
 
 }
@@ -467,7 +467,7 @@ int handle_g_ok(int server_fd, char * hash_filename, char * hash_file){
 
 }
 
-int send_put(char * filename, int server_fd){
+int send_put(int server_fd,char * filename){
   FILE * file_fd;
 
   file_fd = fopen(filename,"rb");

@@ -68,8 +68,7 @@ void handle_register(int id,char * message,int size,int n_servers,struct server_
 
 int handle_g_ok(int server_fd, char * hash_filename, char * hash_file);
 
-int send_put(char * filename, int server_fd);
-
+int send_put(int server_fd,char * filename);
 
 
 #endif

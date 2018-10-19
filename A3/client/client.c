@@ -64,9 +64,10 @@ int main(int argc, char * argv[]){
   printf("Name of the file: %s\n",filename);
   printf("Filname hash: %lu\n",djb2_hash(filename));
 
-  send_put(filename,server_fd);
+  send_put(server_fd,filename);
 
-  /*
+  shutdown(server_fd,SHUT_WR);
+
   char hash_filename[50];
   char hash_file[50];
 
@@ -84,7 +85,7 @@ int main(int argc, char * argv[]){
     printf("Received something differet\n");
   }
 
-  */
+
   //sleep(5);
   close(server_fd);
 
