@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <unistd.h>
@@ -20,8 +23,64 @@ unsigned long djb2_hash( unsigned char * str)
   return hash;
 }
 
+int delete_file(char * filename, char * files_dir){
+  if(files_dir == NULL){
+    return remove(filename);
+  }else{
+    char path[100];
+    memset(path,'\0',100);
+
+    strcpy(path,files_dir);
+    strcat(&path[strlen(files_dir)],filename);
+
+    return remove(path);
+  }
+}
+
+int init_client_socket(char * address, char * port){
+  int sfd;
+
+  struct addrinfo hints;
+  struct addrinfo *result, *rp;
+
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = 0;
+  hints.ai_protocol = 0;
+
+  if(getaddrinfo(address,port,&hints,&result) != 0){
+    perror("Error on getaddrinfo");
+    exit(1);
+  }
+
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+     if (sfd == -1)
+       continue;
+
+     if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
+       break;                  /* Success */
+
+     close(sfd);
+   }
+
+   if (rp == NULL) {               /* No address succeeded */
+     fprintf(stderr, "Could not connect\n");
+     exit(EXIT_FAILURE);
+   }
+
+   freeaddrinfo(result);           /* No longer needed */
+
+   return sfd;
+}
+
 unsigned long get_file_hash(char * filename){
   FILE * file_fd = fopen(filename,"rb");
+
+  if(file_fd == NULL){
+    perror("Get_file_hash: Not possible to open file for reading\n");
+  }
 
   unsigned char file[BUFFER_SIZE];
 
@@ -216,7 +275,7 @@ int handle_start(int reg_fd){
   }
 }
 
-void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
+void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files_dir){
   printf("\nhandle_put.\n");
 
   unsigned char message[BUFFER_SIZE];
@@ -231,6 +290,11 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
   int read_name = 0;
 
   char filename[50];
+  memset(filename,'\0',50);
+
+  char path[50];
+  memset(path,'\0',50);
+  strcpy(path,files_dir);
 
   int pos=0;
 
@@ -239,9 +303,13 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
       read_size = read(client_fd,message,BUFFER_SIZE);
       sprintf(filename,"%s",message);
       printf("Filename: %s(%zu)\n",filename,strlen(filename));
+      strcat(&path[strlen(files_dir)],filename);
+      printf("Path: %s\n",path);
 
-      file_stream = fopen(filename,"wb");
-
+      file_stream = fopen(path,"wb");
+      if(file_stream == NULL){
+        perror("Not possible to create file\n");
+      }
       pos=strlen(filename)+1;
       fwrite(&message[pos],sizeof(unsigned char),read_size-pos,file_stream); //Write read bytes minus the bytes of the filename
       read_name=1;
@@ -258,20 +326,23 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
 
   fclose(file_stream);
 
+  printf("Stream closed\n");
   char hash_filename[50];
   char hash_file[50];
 
   memset(hash_filename,'\0',50);
   memset(hash_file,'\0',50);
 
+  printf("Going to hash filename\n");
   sprintf(hash_filename, "%lu",djb2_hash(filename));
-  sprintf(hash_file, "%lu",get_file_hash(filename));
+  printf("Going to hash filen");
+  sprintf(hash_file, "%lu",get_file_hash(path));
 
   printf("Hash filename: %s\n",hash_filename);
 
   printf("Hash: %s\n",hash_file);
 
-  printf("Length: %d\n",get_file_size(filename));
+  printf("Length: %d\n",get_file_size(path));
 
   int target_server = djb2_hash(filename)%n_servers;
 
@@ -281,13 +352,44 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id){
     printf("I am the server who should have this file(%d)\n",my_id);
     send_p_ok(client_fd,hash_filename,hash_file);
   }else{
+    printf("\nFile should be in server %d\n",target_server);
     char ip[30];
     char port[5];
 
     memset(ip,'\0',30);
     memset(port,'\0',5);
 
-    //TODO: Send query to registry. receive IP and PORT, Make new connection to server. and do send_put. Retrieve hash filene nad has file and froward it back to client_fd 
+    send_query(reg_fd,target_server);
+
+    handle_q_ok(reg_fd,ip,port);
+
+    printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
+
+    int target_server_fd = init_client_socket(ip,port);
+
+    printf("Going to send_put: %s to target_server. ",filename);
+    send_put(target_server_fd,filename,files_dir);
+
+    shutdown(target_server_fd,SHUT_WR);
+
+    memset(hash_filename,'\0',50);
+    memset(hash_file,'\0',50);
+
+    int res = handle_p_ok(target_server_fd,hash_filename,hash_file); //Wait for the hash of the filename and file
+
+    if(res == 1){
+      printf("Received from target server: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+      send_p_ok(client_fd,hash_filename,hash_file);
+      delete_file(filename,files_dir);
+
+    }else if(res == 0){
+      printf("File not found in target server\n");
+      char code = 24;
+      writen(client_fd,&code,1);
+    }else{
+      printf("Wrong code received after put to target server.\n");
+    }
+    //TODO: Send query to registry. receive IP and PORT, Make new connection to server. and do send_put. Retrieve hash filene nad has file and froward it back to client_fd
     //send_query();
   }
 }
@@ -318,7 +420,7 @@ void send_p_ok(int client_fd, char * hash_filename, char * hash_file){
   printf("Send_p_ok. Written\n");
 }
 
-void handle_get(int client_fd, int reg_fd, int n_servers, int my_id){
+void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * files_dir){
   printf("\nhandle_get.Server %d\n",my_id);
 
   unsigned char message[BUFFER_SIZE];
@@ -646,12 +748,28 @@ int handle_p_ok(int server_fd, char * hash_filename, char * hash_file){
   }
 }
 
-int send_put(int server_fd,char * filename){
+int send_put(int server_fd,char * filename, char * files_dir){
+
+  printf("\n Send_put\n");
+
+  printf("Filename: %s\n",filename);
   FILE * file_fd;
 
-  file_fd = fopen(filename,"rb");
+  if(files_dir == NULL){
+    file_fd = fopen(filename,"rb");
+  }else{
+    char path[50];
+    memset(path,'\0',50);
+    strcpy(path,files_dir);
+
+    strcat(&path[strlen(files_dir)],filename);
+    printf("\n Send_put: Path for the file: %s\n",path);
+    file_fd = fopen(path,"rb");
+  }
+
 
   unsigned char file[BUFFER_SIZE];
+  memset(file,'\0',BUFFER_SIZE);
 
   int read_size;
 

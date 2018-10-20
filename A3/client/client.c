@@ -12,43 +12,6 @@
 
 #define BUFFER_SIZE 2000
 
-int init_client_socket(char * address, char * port){
-  int sfd;
-
-  struct addrinfo hints;
-  struct addrinfo *result, *rp;
-
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = 0;
-  hints.ai_protocol = 0;
-
-  if(getaddrinfo(address,port,&hints,&result) != 0){
-    perror("Error on getaddrinfo");
-    exit(1);
-  }
-
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-     if (sfd == -1)
-       continue;
-
-     if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
-       break;                  /* Success */
-
-     close(sfd);
-   }
-
-   if (rp == NULL) {               /* No address succeeded */
-     fprintf(stderr, "Could not connect\n");
-     exit(EXIT_FAILURE);
-   }
-
-   freeaddrinfo(result);           /* No longer needed */
-
-   return sfd;
-}
 
 int main(int argc, char * argv[]){
   if(argc < 3){
@@ -70,7 +33,7 @@ int main(int argc, char * argv[]){
 
   if(strcmp(command,"put") == 0){
     printf("\nPUT\n");
-    send_put(server_fd,filename); //Send the file
+    send_put(server_fd,filename,NULL); //Send the file
 
     shutdown(server_fd,SHUT_WR); //Make the socket stop reading on the other side
 
@@ -86,7 +49,7 @@ int main(int argc, char * argv[]){
       printf("Received: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
 
     }else if(res == 0){
-      printf("File not found\n");
+      printf("Something went wrong when putting file\n");
     }else{
       printf("Wrong code received after put.\n");
     }

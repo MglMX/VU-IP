@@ -16,43 +16,6 @@
 int n_servers;
 int my_id;
 
-int init_client_socket(char * address, char * port){
-  int sfd;
-
-  struct addrinfo hints;
-  struct addrinfo *result, *rp;
-
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = 0;
-  hints.ai_protocol = 0;
-
-  if(getaddrinfo(address,port,&hints,&result) != 0){
-    perror("Error on getaddrinfo");
-    exit(1);
-  }
-
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-     if (sfd == -1)
-       continue;
-
-     if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
-       break;                  /* Success */
-
-     close(sfd);
-   }
-
-   if (rp == NULL) {               /* No address succeeded */
-     fprintf(stderr, "Could not connect\n");
-     exit(EXIT_FAILURE);
-   }
-
-   freeaddrinfo(result);           /* No longer needed */
-
-   return sfd;
-}
 
 int init_server_socket(int port){
   struct sockaddr_in addr;
@@ -83,7 +46,7 @@ int init_server_socket(int port){
   return fd;
 }
 
-void handle_client(int client_fd,int reg_fd){
+void handle_client(int client_fd,int reg_fd, char * files_dir){
 
   printf("\nhandle_client.\n");
 
@@ -94,10 +57,10 @@ void handle_client(int client_fd,int reg_fd){
 
   switch (code) {
     case 12: //PUT
-      handle_put(client_fd,reg_fd,n_servers,my_id);
+      handle_put(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
     case 13: //GET
-      handle_get(client_fd,reg_fd,n_servers,my_id);
+      handle_get(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
   }
 
@@ -110,6 +73,11 @@ int main(int argc, char * argv[]){
     perror("Not enough arguments. Usage: server <port> <reg_ip> <reg_port> <dir>");
     exit(1);
   }
+
+  char files_dir[100];
+  memset(files_dir,'\0',100);
+
+  strcpy(files_dir,argv[4]);
 
   char * port = argv[1];
 
@@ -140,7 +108,7 @@ int main(int argc, char * argv[]){
         pid = fork();
 
         if(pid == 0){
-          handle_client(client_fd,reg_fd);
+          handle_client(client_fd,reg_fd,files_dir);
           exit(1);
         }else{
           close(client_fd);

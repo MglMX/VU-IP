@@ -10,6 +10,10 @@ struct server_info{
 
 unsigned long djb2_hash( unsigned char * str);
 
+int delete_file(char * filename, char * files_dir);
+
+int init_client_socket(char * address, char * port);
+
 int get_file_size(char * filename);
 
 unsigned long get_file_hash(char * filename);
@@ -44,11 +48,11 @@ int send_register(int reg_fd, char * port);
 
 int handle_start(int reg_fd);
 
-void handle_put(int client_fd,int reg_fd, int n_servers, int my_id);
+void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files_dir);
 
 void send_p_ok(int client_fd, char * hash_filename, char * hash_file);
 
-void handle_get(int client_fd, int reg_fd, int n_servers, int my_id);
+void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * files_dir);
 
 /////////////////////////////////////////////////////////////
 // REGISTRY
@@ -74,7 +78,7 @@ void send_get(int server_fd, char * filename);
 
 int handle_p_ok(int server_fd, char * hash_filename, char * hash_file);
 
-int send_put(int server_fd,char * filename);
+int send_put(int server_fd,char * filename, char * files_dir);
 
 
 #endif
