@@ -1,4 +1,1 @@
-This file contains some text to try to be sent to the server. 
-We'll see if it is sending properly or not.
-I hope it is.
-
+Hello this is a text file. It has text in it.

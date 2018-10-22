@@ -131,11 +131,12 @@ int main(int argc, char * argv[]){
     if(pid == 0){
       printf("I am child %d\n",i);
       //print_servers();
-      handle_server(i);
-      sleep(5);
+      while(1){
+        handle_server(i);
+      }
     }
   }
-  while(1){}
+
   //close(reg_fd);
   return 0;
 }

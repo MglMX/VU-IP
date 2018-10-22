@@ -62,6 +62,9 @@ void handle_client(int client_fd,int reg_fd, char * files_dir){
     case 13: //GET
       handle_get(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
+    case 14: //DELETE
+      handle_delete(client_fd,reg_fd,n_servers,my_id,files_dir);
+      break;
   }
 
 
@@ -73,6 +76,7 @@ int main(int argc, char * argv[]){
     perror("Not enough arguments. Usage: server <port> <reg_ip> <reg_port> <dir>");
     exit(1);
   }
+
 
   char files_dir[100];
   memset(files_dir,'\0',100);
