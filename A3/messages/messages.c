@@ -237,7 +237,7 @@ void send_d_err(int client_fd){
 }
 
 void handle_delete(int client_fd, int reg_fd, int n_servers, int my_id, char * files_dir){
-  printf("\nhandle_delete. Server %d\n",my_id);
+  //printf("\nhandle_delete. Server %d\n",my_id);
 
   unsigned char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
@@ -253,13 +253,10 @@ void handle_delete(int client_fd, int reg_fd, int n_servers, int my_id, char * f
   sprintf(filename, "%s",message);
 
   unsigned long hash = djb2_hash(filename);
-  printf("Hash filename: %lu\n",djb2_hash(filename));
 
   int target_server = hash%n_servers;
-  printf("File should be in server: %d\n",target_server);
 
   if(target_server == my_id){
-    printf("I am the server who has the file to be deleted.(%d)\n",my_id);
 
     int res = delete_file(filename,files_dir);
 
@@ -280,11 +277,8 @@ void handle_delete(int client_fd, int reg_fd, int n_servers, int my_id, char * f
 
     handle_q_ok(reg_fd,ip,port);
 
-    printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
-
     int target_server_fd = init_client_socket(ip,port);
 
-    printf("Going to send_delete: %s to target_server. ",filename);
     send_delete(target_server_fd,filename);
 
     shutdown(target_server_fd,SHUT_WR);
@@ -296,7 +290,7 @@ void handle_delete(int client_fd, int reg_fd, int n_servers, int my_id, char * f
     }else if (res == 0){
       send_d_err(client_fd);
     }else{
-      perror("Received somehitng unexpected\n");
+      perror("Received something unexpected\n");
     }
 
     //TODO: Handle_d_ok
@@ -307,24 +301,23 @@ void handle_delete(int client_fd, int reg_fd, int n_servers, int my_id, char * f
 }
 
 int handle_q_ok(int reg_fd, char * ip, char * port){
-  printf("I am in handle_q_ok\n");
 
   char message[50];
   memset(message,'\0',50);
 
   int size_read = read(reg_fd,message,16);
 
-  printer(message,size_read);
+  //printer(message,size_read);
 
   if(message[0]==21){
-    printf("Handle_q_ok: Code is 21\n");
+    //printf("Handle_q_ok: Code is 21\n");
 
     int pos=1;
     sprintf(ip,"%s",&message[pos]);
     pos+=strlen(ip)+1;
     sprintf(port,"%s",&message[pos]);
 
-    printf("Handle_q_ok: IP: %s PORT: %s\n",ip,port);
+    //printf("Handle_q_ok: IP: %s PORT: %s\n",ip,port);
 
     return 1;
   }else if(message[0]==22){
@@ -338,20 +331,14 @@ void handle_r_ok(int reg_fd,int * n_servers,int * my_id){
   char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
   int read_size = read(reg_fd,message,3);
-  printf("handle_r_ok: Message received:(%d) ",read_size);
+  //printf("handle_r_ok: Message received:(%d) ",read_size);
 
-  int i;
-  for(i=0; i<read_size;i++){
-    printf("%d:",message[i]);
-  }
-  printf("\n");
-
-  printer(message,read_size);
+  //printer(message,read_size);
 
   *n_servers = message[1];
   *my_id = message[2];
 
-  printf("There are %d servers and I am server %d \n",*n_servers, *my_id);
+  //printf("There are %d servers and I am server %d \n",*n_servers, *my_id);
 }
 
 int send_query(int reg_fd, int id){
@@ -378,12 +365,10 @@ int send_register(int reg_fd, char * port){
 }
 
 int handle_start(int reg_fd){
-  printf("I am in handle_start\n");
   char message[BUFFER_SIZE];
   memset(message,'\0',strlen(message));
   int size_read = read(reg_fd,message,1);
-  printf("I am in handle_start. Message read \n");
-  printer(message,size_read);
+  //printer(message,size_read);
   if(message[0]==40){
     return 1;
   }else{
@@ -392,7 +377,6 @@ int handle_start(int reg_fd){
 }
 
 void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files_dir){
-  printf("\nhandle_put.\n");
 
   unsigned char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
@@ -418,9 +402,9 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files
     if(!read_name){
       read_size = read(client_fd,message,BUFFER_SIZE);
       sprintf(filename,"%s",message);
-      printf("Filename: [%s](%zu)\n",filename,strlen(filename));
+      //printf("Filename: [%s](%zu)\n",filename,strlen(filename));
       strcat(&path[strlen(files_dir)],filename); //Attaching filename to path
-      printf("Path: %s\n",path);
+
 
       file_stream = fopen(path,"wb");
       if(file_stream == NULL){
@@ -434,43 +418,31 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files
       fwrite(message,sizeof(unsigned char),read_size,file_stream);
     }
 
-    printf("Read from socket %d\n", read_size);
+    //printf("Read from socket %d\n", read_size);
 
   }while(read_size > 0);
 
-  printf("File written\n");
-
   fclose(file_stream);
 
-  printf("Stream closed\n");
   char hash_filename[100];
   char hash_file[100];
 
   memset(hash_filename,'\0',100);
   memset(hash_file,'\0',100);
 
-  printf("Going to hash filename: %s\n",filename);
   sprintf(hash_filename, "%lu",djb2_hash(filename));
-  printf("Hash filename: %s\n",hash_filename);
+  //printf("Hash filename: %s\n",hash_filename);
 
-
-  printf("Going to hash file in path: %s\n",path);
-  printf("Hash on the fly: %lu\n",get_file_hash(path));
   sprintf(hash_file, "%lu",get_file_hash(path));
-  printf("Hash: %s\n",hash_file);
-
-
-  printf("Length: %d\n",get_file_size(path));
+  //printf("Hash: %s\n",hash_file);
 
   int target_server = djb2_hash(filename)%n_servers;
 
-  printf("File should be in server %d\n",target_server);
 
   if(target_server == my_id){
-    printf("I am the server who should have this file(%d)\n",my_id);
     send_p_ok(client_fd,hash_filename,hash_file);
   }else{
-    printf("\nFile should be in server %d\n",target_server);
+
     char ip[30];
     char port[5];
 
@@ -481,11 +453,11 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files
 
     handle_q_ok(reg_fd,ip,port);
 
-    printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
+    //printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
 
     int target_server_fd = init_client_socket(ip,port);
 
-    printf("Going to send_put: %s to target_server. ",filename);
+    //printf("Going to send_put: %s to target_server. ",filename);
     send_put(target_server_fd,filename,files_dir);
 
     shutdown(target_server_fd,SHUT_WR);
@@ -507,7 +479,7 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files
       char code = 24;
       writen(client_fd,&code,1);
     }else{
-      printf("Wrong code received after put to target server.\n");
+      perror("Wrong code received after put to target server.\n");
     }
 
   }
@@ -578,7 +550,6 @@ void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * file
   //printf("File should be in server: %d\n",target_server);
 
   if(target_server == my_id){
-    printf("I am the server who has the file.(%d)\n",my_id);
     send_g_ok(client_fd,filename,files_dir);
   }else{
     char ip[30];
@@ -591,10 +562,8 @@ void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * file
 
     handle_q_ok(reg_fd,ip,port);
 
-    //printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
-
     send_g_redirect(client_fd,ip,port);
-    //TODO: Remote get
+
   }
 }
 
@@ -604,7 +573,6 @@ void send_g_err(int client_fd){
 }
 
 void send_g_ok(int client_fd, char * filename, char * files_dir){
-  printf("\nSend_g_ok\n");
 
   char path[100];
   memset(path,'\0',100);
@@ -624,8 +592,6 @@ void send_g_ok(int client_fd, char * filename, char * files_dir){
 
     sprintf(hash_filename,"%lu",djb2_hash(filename));
     sprintf(hash_file,"%lu",get_file_hash(path));
-
-    //printf("Going to send hash_filename: %s hash_file: %s\n",hash_filename,hash_file);
 
     int size_hash_filename = strlen(hash_filename);
     int size_hash_file = strlen(hash_file);
@@ -766,7 +732,7 @@ void send_r_ok(int server_fd,int id,int n_servers){
 * Receives the listening port of the server connected. Stores it in the servers array. Replies to the server with 20:n_servers:ID
 */
 void handle_register(int id,char * message, int size,int n_servers,struct server_info *servers){
-  printer(message,size);
+  //printer(message,size);
 
   char port[10];
   strcpy(port,&message[1]); //Copying the port from the message skipping the code

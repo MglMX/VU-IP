@@ -48,21 +48,24 @@ int init_server_socket(int port){
 
 void handle_client(int client_fd,int reg_fd, char * files_dir){
 
-  printf("\nhandle_client.\n");
+  //printf("\nhandle_client.\n");
 
   char code;
   int read_size = read(client_fd,&code,1);
 
-  printf("Code is: %d\n",code);
+  //printf("Code is: %d\n",code);
 
   switch (code) {
     case 12: //PUT
+      printf("Received PUT command\n");
       handle_put(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
     case 13: //GET
+      printf("Received GET command\n");
       handle_get(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
     case 14: //DELETE
+      printf("Received DELETE command\n");
       handle_delete(client_fd,reg_fd,n_servers,my_id,files_dir);
       break;
   }
@@ -92,12 +95,12 @@ int main(int argc, char * argv[]){
   send_register(reg_fd,port);
 
   handle_r_ok(reg_fd,&n_servers,&my_id);
-  printf("There are %d servers and I am server %d \n",n_servers, my_id);
+  printf("Total servers: %d\nMy server id: %d \n",n_servers, my_id);
 
   int start = handle_start(reg_fd);
 
   if(start){
-    printf("Server %d: Ready to start\n",my_id);
+    printf("Ready to listen to clients\n");
 
     int client_fd;
     socklen_t addrlen = sizeof(struct sockaddr_in);

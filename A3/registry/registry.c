@@ -21,7 +21,7 @@ void print_servers(){
   }
 }
 void handle_server(int id){
-    printf("Handling server %d\n",id);
+
     char message[BUFFER_SIZE];
     int server_fd = servers[id].fd;
 
@@ -29,17 +29,13 @@ void handle_server(int id){
 
     printer(message,read_size);
 
-    char code = message[0];
-
-    printf("Code received: %d\n",code);
+    char code = message[0];    
 
     switch (code) {
       case 10: //REGISTER
         handle_register(id,message,read_size,n_servers,servers);
         break;
       case 11: //QUERY
-        printf("Case: 11 QUERY\n");
-        printf("Case: id: %d\n",message[1]);
         handle_query(server_fd,message,n_servers,servers);
         break;
 
@@ -83,7 +79,7 @@ void receive_servers(int n_servers, int reg_fd){
   int pid;
   int i;
   for(i=0;i<n_servers;i++){
-    printf("Waiting for accept\n");
+    //printf("Waiting for accept\n");
     int server_fd = accept(reg_fd,(struct sockaddr *)&server_addr,&addrlen);
     printf("Server connected. IP: %s PORT: %d \n ID: %d fd: %d\n",inet_ntoa(server_addr.sin_addr),server_addr.sin_port,i,server_fd);
     servers[i].id = i;
@@ -101,7 +97,7 @@ void receive_servers(int n_servers, int reg_fd){
 
 int main(int argc, char * argv[]){
   if(argc<3){
-    perror("Not enoguh arguments. Usage: registry <port> <n_servers>");
+    perror("Not enough arguments. Usage: registry <port> <n_servers>");
     exit(1);
   }
 
@@ -112,24 +108,17 @@ int main(int argc, char * argv[]){
 
   receive_servers(n_servers,reg_fd);
 
-  printf("------------------------\n");
-  char ip[20];
-  //print_servers();
-  printf("Servers[%d].ip = %s(%zu)\n",0,servers[0].ip,strlen(servers[0].ip));
-  strcpy(ip,servers[0].ip);
-  printf("copied ip: %s\n",ip);
-  printf("------------------------\n");
 
   printf("All servers connected\n");
   send_start(n_servers,servers);
-  //Do something after all servers are connected
-  printf("Sent start to all servers\n\n");
+
+  //printf("Sent start to all servers\n\n");
 
   int i,pid;
   for(i=0;i<n_servers;i++){
     pid = fork();
     if(pid == 0){
-      printf("I am child %d\n",i);
+      //printf("I am child %d\n",i);
       //print_servers();
       while(1){
         handle_server(i);
