@@ -78,6 +78,8 @@ void handle_query(int server_fd, char * message, int n_servers, struct server_in
 
 void handle_register(int id,char * message,int size,int n_servers,struct server_info* servers);
 
+void send_g_err(int client_fd);
+
 void send_g_ok(int client_fd, char * filename, char * files_dir);
 
 void send_g_redirect(int client_fd, char *ip,char * port);

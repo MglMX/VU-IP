@@ -118,7 +118,7 @@ int get_file_string(char * filename, char ** file){
 
   if(file_fd == NULL){
     perror("Get_file_string: Not possible to open file for reading\n");
-    exit(1);
+    return -1;
   }
 
   unsigned char buffer[BUFFER_SIZE];
@@ -498,12 +498,12 @@ void handle_put(int client_fd,int reg_fd, int n_servers, int my_id, char * files
     close(target_server_fd);
 
     if(res == 1){
-      printf("Received from target server: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
+      //printf("Received from target server: Hash_filename: %s Hash_file: %s\n",hash_filename, hash_file);
       send_p_ok(client_fd,hash_filename,hash_file);
       delete_file(filename,files_dir);
 
     }else if(res == 0){
-      printf("File not found in target server\n");
+      //printf("File not found in target server\n");
       char code = 24;
       writen(client_fd,&code,1);
     }else{
@@ -534,9 +534,8 @@ void send_p_ok(int client_fd, char * hash_filename, char * hash_file){
 
   //pos+=1;
 
-  printf("Send_p_ok. Going to write\n");
   writen(client_fd,message,pos);
-  printf("Send_p_ok. Written\n");
+
 }
 
 void send_g_redirect(int client_fd, char *ip,char * port){
@@ -544,8 +543,6 @@ void send_g_redirect(int client_fd, char *ip,char * port){
   memset(reply,'\0',100);
 
   reply[0]=26; //Q_OK code
-
-  printf("send_g_redirect: IP: %s PORT: %s \n",ip,port);
 
   int pos=1;
   strcat(&reply[pos],ip); //21<ip>
@@ -561,7 +558,6 @@ void send_g_redirect(int client_fd, char *ip,char * port){
 }
 
 void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * files_dir){
-  printf("\nhandle_get.Server %d\n",my_id);
 
   unsigned char message[BUFFER_SIZE];
   memset(message,'\0',BUFFER_SIZE);
@@ -576,13 +572,10 @@ void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * file
 
   sprintf(filename, "%s",message);
 
-  printf("Filename received: %s\n",filename);
-
   unsigned long hash = djb2_hash(filename);
-  printf("Hash filename: %lu\n",djb2_hash(filename));
 
   int target_server = hash%n_servers;
-  printf("File should be in server: %d\n",target_server);
+  //printf("File should be in server: %d\n",target_server);
 
   if(target_server == my_id){
     printf("I am the server who has the file.(%d)\n",my_id);
@@ -598,68 +591,79 @@ void handle_get(int client_fd, int reg_fd, int n_servers, int my_id, char * file
 
     handle_q_ok(reg_fd,ip,port);
 
-    printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
+    //printf("Target server ip: %s\nTarget server port: %s\n",ip,port);
 
     send_g_redirect(client_fd,ip,port);
     //TODO: Remote get
   }
 }
 
+void send_g_err(int client_fd){
+  char code = 28;
+  writen(client_fd,&code,1);
+}
+
 void send_g_ok(int client_fd, char * filename, char * files_dir){
   printf("\nSend_g_ok\n");
 
-  char * message;
-
   char path[100];
+  memset(path,'\0',100);
   get_path(filename,files_dir,path);
 
-  char hash_filename[50];
-  char hash_file[50];
-  memset(hash_filename,'\0',50);
-  memset(hash_file,'\0',50);
+  char * check;
 
-  sprintf(hash_filename,"%lu",djb2_hash(filename));
-  sprintf(hash_file,"%lu",get_file_hash(path));
+  if(get_file_string(path,&check) == -1){//File does not exist
+    send_g_err(client_fd);
+  }else{
+    char * message;
 
-  printf("Going to send hash_filename: %s hash_file: %s\n",hash_filename,hash_file);
+    char hash_filename[50];
+    char hash_file[50];
+    memset(hash_filename,'\0',50);
+    memset(hash_file,'\0',50);
 
-  int size_hash_filename = strlen(hash_filename);
-  int size_hash_file = strlen(hash_file);
-  int size_hashes = size_hash_filename+size_hash_file;
+    sprintf(hash_filename,"%lu",djb2_hash(filename));
+    sprintf(hash_file,"%lu",get_file_hash(path));
 
-  char * file;
+    //printf("Going to send hash_filename: %s hash_file: %s\n",hash_filename,hash_file);
 
-  int size_file = get_file_string(path,&file);
-  int size_total = size_hashes+size_file+3;//Size for code + hashes + 2*'\0' + file
+    int size_hash_filename = strlen(hash_filename);
+    int size_hash_file = strlen(hash_file);
+    int size_hashes = size_hash_filename+size_hash_file;
 
-  printf("size_hash_filename: %d\nsize_hash_file: %d\nsize_hashes: %d\nsize_file: %d\nsize_total: %d\n",size_hash_filename, size_hash_file,size_hashes,size_file,size_total);
+    char * file;
 
-  message = malloc(size_total);
-  memset(message,'\0',size_hashes+3);
-  memset(&message[size_hashes+3],0,size_file);
+    int size_file = get_file_string(path,&file);
+    int size_total = size_hashes+size_file+3;//Size for code + hashes + 2*'\0' + file
 
-  int pos = 0;
-  message[pos]=25; //G_OK Code
+    //printf("size_hash_filename: %d\nsize_hash_file: %d\nsize_hashes: %d\nsize_file: %d\nsize_total: %d\n",size_hash_filename, size_hash_file,size_hashes,size_file,size_total);
 
-  pos+=1;
-  strcat(&message[pos],hash_filename); //Attaching hash_filename
+    message = malloc(size_total);
+    memset(message,'\0',size_hashes+3);
+    memset(&message[size_hashes+3],0,size_file);
 
-  pos+=size_hash_filename;
-  message[pos]='\0';
+    int pos = 0;
+    message[pos]=25; //G_OK Code
 
-  pos+=1;
-  strcat(&message[pos],hash_file);
+    pos+=1;
+    strcat(&message[pos],hash_filename); //Attaching hash_filename
 
-  pos+=size_hash_file;
-  message[pos]='\0';
+    pos+=size_hash_filename;
+    message[pos]='\0';
 
-  pos+=1;
-  strcat(&message[pos],file);
+    pos+=1;
+    strcat(&message[pos],hash_file);
 
-  pos+=size_file;
+    pos+=size_hash_file;
+    message[pos]='\0';
 
-  writen(client_fd,message,pos);
+    pos+=1;
+    strcat(&message[pos],file);
 
+    pos+=size_file;
+
+    writen(client_fd,message,pos);
+  }
 }
 
 /////////////////////////////////////////////////////////////
